@@ -7,7 +7,7 @@ const admin = require("firebase-admin");
 const app = express();
 const port = process.env.PORT || 3000;
 
-// ✅ রুট রাউট (Vercel চেক করার জন্য)
+
 app.get("/", (req, res) => {
   res.send("Car Rental Server is running properly!");
 });
@@ -38,7 +38,7 @@ if (serviceAccount && admin.apps.length === 0) {
 }
 
 // --- CORS Configuration ---
-const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,http://localhost:5174,https://spontaneous-clafoutis-c5c9c8.netlify.app";
+const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,http://localhost:5174,https://amazing-bavarois-33f61c.netlify.app";
 const allowedOrigins = FRONTEND_URLS.split(",").map((u) => u.trim());
 
 app.use(
