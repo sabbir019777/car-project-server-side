@@ -37,10 +37,9 @@ if (serviceAccount && admin.apps.length === 0) {
   console.log("✅ Firebase Admin initialized");
 }
 
-// --- CORS Configuration ---
-// আপনার ফ্রন্টএন্ডের সব লিঙ্ক এখানে কমা দিয়ে বসান
+
 const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,http://localhost:5174,https://amazing-bavarois-33f61c.netlify.app,https://car-rental-plantform.vercel.app";
-// (দ্রষ্টব্য: শেষের লিঙ্কটি আপনার সঠিক Frontend লিঙ্ক হতে হবে, আমি উদাহরণ হিসেবে আপনার দেওয়া লিঙ্কটি বসালাম)
+
 const allowedOrigins = FRONTEND_URLS.split(",").map((u) => u.trim());
 
 app.use(
