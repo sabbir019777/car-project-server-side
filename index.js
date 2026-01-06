@@ -39,12 +39,16 @@ if (serviceAccount && admin.apps.length === 0) {
 
 const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,https://amazing-bavarois-33f61c.netlify.app,https://car-rental-plantform-1on34o919-cardioy.vercel.app";
 
-const allowedOrigins = FRONTEND_URLS.split(",").map((u) => u.trim());
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://car-rental-plantform.vercel.app",
+  "https://car-rental-platform.vercel.app"
+];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+      if (!origin || allowedOrigins.some(url => origin.includes(url)) || allowedOrigins.includes("*")) {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy: origin ${origin} not allowed`));
@@ -120,7 +124,7 @@ async function run() {
       res.json(result);
     });
 
-    // অ্যাডমিন ফিক্স
+    // admin
     app.patch("/api/users/make-admin", verifyToken, async (req, res) => {
       const { secretKey, email } = req.body;
       const ADMIN_SECRET_KEY = "Sabbir@1234"; 
@@ -182,13 +186,18 @@ async function run() {
       res.json(result);
     });
 
-    // ✅ Top Rated (এটি /:id এর উপরে আছে - ঠিক আছে)
-    app.get("/api/cars/top-rated", async (req, res) => {
-      const cars = await carsCollection.find({}).sort({rating: -1}).limit(20).toArray();
-      res.json(cars);
-    });
 
-    // ✅ Top Browse (এটি অবশ্যই /:id এর উপরে থাকতে হবে - ঠিক আছে)
+// Top Rated (
+app.get("/api/cars/top-rated", async (req, res) => {
+  try {
+    const cars = await carsCollection.find({}).sort({ rating: -1 }).limit(20).toArray();
+    res.json(cars);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching top rated cars" });
+  }
+});
+
+ 
     app.get("/api/cars/top-browse", async (req, res) => {
       try {
         const result = await carsCollection.find({}).sort({ createdAt: -1 }).limit(28).toArray();
@@ -210,11 +219,10 @@ async function run() {
       res.json(result);
     });
 
-    // 🔻 Single Car Details (এটি অবশ্যই সবশেষে থাকবে)
     app.get("/api/cars/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        // চেক করা হচ্ছে ID টি ভ্যালিড কিনা, যাতে top-browse বা অন্য কিছু আসলে ক্র্যাশ না করে
+        
         if (!ObjectId.isValid(id)) return res.status(400).send("Invalid ID");
         const query = { _id: new ObjectId(id) };
         const result = await carsCollection.findOne(query);
@@ -302,5 +310,5 @@ async function startServer() {
 }
 
 startServer();
-// এটি ভেরসেলের জন্য অত্যন্ত জরুরি
+
 module.exports = app;
