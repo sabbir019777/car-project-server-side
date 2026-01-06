@@ -302,3 +302,5 @@ async function startServer() {
 }
 
 startServer();
+// এটি ভেরসেলের জন্য অত্যন্ত জরুরি
+module.exports = app;
