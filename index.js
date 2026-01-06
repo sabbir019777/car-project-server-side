@@ -37,8 +37,7 @@ if (serviceAccount && admin.apps.length === 0) {
   console.log("✅ Firebase Admin initialized");
 }
 
-
-const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,http://localhost:5174,https://amazing-bavarois-33f61c.netlify.app,https://car-rental-plantform.vercel.app";
+const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,https://amazing-bavarois-33f61c.netlify.app,https://car-rental-plantform-1on34o919-cardioy.vercel.app";
 
 const allowedOrigins = FRONTEND_URLS.split(",").map((u) => u.trim());
 
@@ -89,7 +88,7 @@ async function verifyToken(req, res, next) {
 
 async function run() {
   try {
-    await client.connect();
+    // await client.connect();
     console.log("✅ MongoDB Connected Successfully!");
 
     const db = client.db("car");
@@ -292,5 +291,14 @@ async function run() {
   }
 }
 
-run().catch(console.error);
-app.listen(port, () => console.log(`🚀 Port: ${port}`));
+
+async function startServer() {
+  try {
+    await run();
+    app.listen(port, () => console.log(`🚀 Port: ${port}`));
+  } catch (error) {
+    console.error("Failed to start server:", error);
+  }
+}
+
+startServer();
