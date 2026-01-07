@@ -7,7 +7,6 @@ const admin = require("firebase-admin");
 const app = express();
 const port = process.env.PORT || 3000;
 
-
 app.get("/", (req, res) => {
   res.send("Car Rental Server is running properly!");
 });
@@ -37,18 +36,24 @@ if (serviceAccount && admin.apps.length === 0) {
   console.log("✅ Firebase Admin initialized");
 }
 
-const FRONTEND_URLS = process.env.FRONTEND_URLS || "http://localhost:5173,https://amazing-bavarois-33f61c.netlify.app,https://car-rental-plantform-1on34o919-cardioy.vercel.app";
+const FRONTEND_URLS =
+  process.env.FRONTEND_URLS ||
+  "http://localhost:5173,https://amazing-bavarois-33f61c.netlify.app,car-rental-plantform.vercel.app";
 
 const allowedOrigins = [
   "http://localhost:5173",
   "https://car-rental-plantform.vercel.app",
-  "https://car-rental-platform.vercel.app"
+  "https://car-rental-platform.vercel.app",
 ];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.some(url => origin.includes(url)) || allowedOrigins.includes("*")) {
+      if (
+        !origin ||
+        allowedOrigins.some((url) => origin.includes(url)) ||
+        allowedOrigins.includes("*")
+      ) {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy: origin ${origin} not allowed`));
@@ -75,7 +80,9 @@ async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized: No token provided" });
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: No token provided" });
     }
     const idToken = authHeader.split(" ")[1];
     const decodedToken = await admin.auth().verifyIdToken(idToken);
@@ -106,32 +113,49 @@ async function run() {
       const user = req.body;
       const filter = { email: user.email };
       const updateDoc = { $set: user };
-      const result = await usersCollection.updateOne(filter, updateDoc, { upsert: true });
+      const result = await usersCollection.updateOne(filter, updateDoc, {
+        upsert: true,
+      });
       res.json(result);
     });
 
     app.get("/api/users", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Forbidden: Admin Only" });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Forbidden: Admin Only" });
       const result = await usersCollection.find().toArray();
       res.json(result);
     });
 
     app.delete("/api/admin/users/:id", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Forbidden" });
-      const result = await usersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Forbidden" });
+      const result = await usersCollection.deleteOne({
+        _id: new ObjectId(req.params.id),
+      });
       res.json(result);
     });
 
     // admin
     app.patch("/api/users/make-admin", verifyToken, async (req, res) => {
       const { secretKey, email } = req.body;
-      const ADMIN_SECRET_KEY = "Sabbir@1234"; 
+      const ADMIN_SECRET_KEY = "Sabbir@1234";
 
-      if (secretKey !== ADMIN_SECRET_KEY) return res.status(403).json({ success: false, message: "Invalid Key!" });
+      if (secretKey !== ADMIN_SECRET_KEY)
+        return res
+          .status(403)
+          .json({ success: false, message: "Invalid Key!" });
 
-      const result = await usersCollection.updateOne({ email }, { $set: { role: "admin" } }, { upsert: true });
+      const result = await usersCollection.updateOne(
+        { email },
+        { $set: { role: "admin" } },
+        { upsert: true }
+      );
       res.json({ success: true, message: "Success! You are now an Admin." });
     });
 
@@ -145,7 +169,7 @@ async function run() {
       const car = req.body;
       car.providerEmail = req.user.email;
       car.status = "available";
-      car.createdAt = new Date(); 
+      car.createdAt = new Date();
       const result = await carsCollection.insertOne(car);
       res.status(201).json({ message: "Car added!", id: result.insertedId });
     });
@@ -155,9 +179,11 @@ async function run() {
         const id = req.params.id;
         const filter = { _id: new ObjectId(id) };
         const updatedCar = req.body;
-        delete updatedCar._id; 
+        delete updatedCar._id;
         delete updatedCar.providerEmail;
-        const updateDoc = { $set: { ...updatedCar, price: Number(updatedCar.price) } };
+        const updateDoc = {
+          $set: { ...updatedCar, price: Number(updatedCar.price) },
+        };
         const result = await carsCollection.updateOne(filter, updateDoc);
         res.json(result);
       } catch (error) {
@@ -180,27 +206,38 @@ async function run() {
     });
 
     app.delete("/api/admin/cars/:id", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Admin Only" });
-      const result = await carsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Admin Only" });
+      const result = await carsCollection.deleteOne({
+        _id: new ObjectId(req.params.id),
+      });
       res.json(result);
     });
 
+    // Top Rated (
+    app.get("/api/cars/top-rated", async (req, res) => {
+      try {
+        const cars = await carsCollection
+          .find({})
+          .sort({ rating: -1 })
+          .limit(20)
+          .toArray();
+        res.json(cars);
+      } catch (error) {
+        res.status(500).json({ message: "Error fetching top rated cars" });
+      }
+    });
 
-// Top Rated (
-app.get("/api/cars/top-rated", async (req, res) => {
-  try {
-    const cars = await carsCollection.find({}).sort({ rating: -1 }).limit(20).toArray();
-    res.json(cars);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching top rated cars" });
-  }
-});
-
- 
     app.get("/api/cars/top-browse", async (req, res) => {
       try {
-        const result = await carsCollection.find({}).sort({ createdAt: -1 }).limit(28).toArray();
+        const result = await carsCollection
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(28)
+          .toArray();
         res.json(result);
       } catch (error) {
         res.status(500).json({ message: "Error fetching cars" });
@@ -208,13 +245,18 @@ app.get("/api/cars/top-rated", async (req, res) => {
     });
 
     app.get("/api/car/my-listings", verifyToken, async (req, res) => {
-      const cars = await carsCollection.find({ providerEmail: req.user.email }).toArray();
+      const cars = await carsCollection
+        .find({ providerEmail: req.user.email })
+        .toArray();
       res.json(cars);
     });
 
     app.get("/api/admin/all-cars", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Admin Only" });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Admin Only" });
       const result = await carsCollection.find().toArray();
       res.json(result);
     });
@@ -222,7 +264,7 @@ app.get("/api/cars/top-rated", async (req, res) => {
     app.get("/api/cars/:id", async (req, res) => {
       try {
         const id = req.params.id;
-        
+
         if (!ObjectId.isValid(id)) return res.status(400).send("Invalid ID");
         const query = { _id: new ObjectId(id) };
         const result = await carsCollection.findOne(query);
@@ -235,9 +277,14 @@ app.get("/api/cars/top-rated", async (req, res) => {
     // --- BOOKING APIs ---
 
     app.delete("/api/admin/bookings/:id", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Admin Only" });
-      const result = await bookingsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Admin Only" });
+      const result = await bookingsCollection.deleteOne({
+        _id: new ObjectId(req.params.id),
+      });
       res.json(result);
     });
 
@@ -245,31 +292,53 @@ app.get("/api/cars/top-rated", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const booking = await bookingsCollection.findOne(query);
-      if (!booking) return res.status(404).json({ message: "Booking not found" });
+      if (!booking)
+        return res.status(404).json({ message: "Booking not found" });
       const result = await bookingsCollection.deleteOne(query);
       if (booking.carId) {
-        await carsCollection.updateOne({ _id: new ObjectId(booking.carId) }, { $set: { status: "available" } });
+        await carsCollection.updateOne(
+          { _id: new ObjectId(booking.carId) },
+          { $set: { status: "available" } }
+        );
       }
       res.json(result);
     });
 
     app.post("/api/cars/:id/book", verifyToken, async (req, res) => {
-      const car = await carsCollection.findOne({ _id: new ObjectId(req.params.id) });
-      if (!car || car.status === "booked") return res.status(400).json({ message: "Unavailable" });
-      const bookingData = { carId: car._id, userEmail: req.user.email, bookedAt: new Date(), name: car.name, pricePerDay: car.price, image: car.imageUrl };
+      const car = await carsCollection.findOne({
+        _id: new ObjectId(req.params.id),
+      });
+      if (!car || car.status === "booked")
+        return res.status(400).json({ message: "Unavailable" });
+      const bookingData = {
+        carId: car._id,
+        userEmail: req.user.email,
+        bookedAt: new Date(),
+        name: car.name,
+        pricePerDay: car.price,
+        image: car.imageUrl,
+      };
       await bookingsCollection.insertOne(bookingData);
-      await carsCollection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: "booked" } });
+      await carsCollection.updateOne(
+        { _id: new ObjectId(req.params.id) },
+        { $set: { status: "booked" } }
+      );
       res.json({ message: "Booked!" });
     });
 
     app.get("/api/my-bookings", verifyToken, async (req, res) => {
-      const result = await bookingsCollection.find({ userEmail: req.user.email }).toArray();
+      const result = await bookingsCollection
+        .find({ userEmail: req.user.email })
+        .toArray();
       res.json(result);
     });
 
     app.get("/api/admin/all-bookings", verifyToken, async (req, res) => {
-      const adminUser = await usersCollection.findOne({ email: req.user.email });
-      if (adminUser?.role !== "admin") return res.status(403).json({ message: "Admin Only" });
+      const adminUser = await usersCollection.findOne({
+        email: req.user.email,
+      });
+      if (adminUser?.role !== "admin")
+        return res.status(403).json({ message: "Admin Only" });
       const result = await bookingsCollection.find().toArray();
       res.json(result);
     });
@@ -280,15 +349,35 @@ app.get("/api/cars/top-rated", async (req, res) => {
       if (user?.role === "admin") {
         const totalCars = await carsCollection.countDocuments();
         const totalBookings = await bookingsCollection.countDocuments();
-        const totalUsers = await usersCollection.countDocuments(); 
-        const activeRentals = await carsCollection.countDocuments({ status: "booked" });
-        const availableCars = await carsCollection.countDocuments({ status: "available" });
-        res.json({ myListings: totalCars, activeRentals, availableCars, myBookings: totalBookings, totalUsers });
+        const totalUsers = await usersCollection.countDocuments();
+        const activeRentals = await carsCollection.countDocuments({
+          status: "booked",
+        });
+        const availableCars = await carsCollection.countDocuments({
+          status: "available",
+        });
+        res.json({
+          myListings: totalCars,
+          activeRentals,
+          availableCars,
+          myBookings: totalBookings,
+          totalUsers,
+        });
       } else {
-        const myListings = await carsCollection.countDocuments({ providerEmail: email });
-        const activeRentals = await carsCollection.countDocuments({ providerEmail: email, status: "booked" });
-        const availableCars = await carsCollection.countDocuments({ providerEmail: email, status: "available" });
-        const myBookings = await bookingsCollection.countDocuments({ userEmail: email });
+        const myListings = await carsCollection.countDocuments({
+          providerEmail: email,
+        });
+        const activeRentals = await carsCollection.countDocuments({
+          providerEmail: email,
+          status: "booked",
+        });
+        const availableCars = await carsCollection.countDocuments({
+          providerEmail: email,
+          status: "available",
+        });
+        const myBookings = await bookingsCollection.countDocuments({
+          userEmail: email,
+        });
         res.json({ myListings, activeRentals, availableCars, myBookings });
       }
     });
@@ -299,7 +388,6 @@ app.get("/api/cars/top-rated", async (req, res) => {
   }
 }
 
-
 async function startServer() {
   try {
     await run();
@@ -309,6 +397,10 @@ async function startServer() {
   }
 }
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
+
+
