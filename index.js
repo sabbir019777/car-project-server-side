@@ -67,7 +67,7 @@ const client = new MongoClient(uri, {
   },
 });
 
-// সরাসরি কালেকশনগুলো গ্লোবাল স্কোপে নিয়ে আসা হয়েছে যাতে Vercel রাউটগুলো পায়
+
 const db = client.db("car");
 const carsCollection = db.collection("car-plant");
 const bookingsCollection = db.collection("bookings");
