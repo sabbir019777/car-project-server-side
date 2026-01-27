@@ -36,7 +36,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://car-project-server-side.vercel.app",
   "https://car-rental-platform.vercel.app",
-  "https://car-rentals-platform.netlify.app" 
+  "https://car-rentals-plantform.netlify.app"
 ];
 
 app.use(
