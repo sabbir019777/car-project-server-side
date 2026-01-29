@@ -36,9 +36,9 @@ const allowedOrigins = [
   "http://localhost:5173",
   "https://car-project-server-side.vercel.app",
   "https://car-rental-platform.vercel.app",
+  "https://car-rental-plantform.vercel.app",
   "https://car-rentals-plantform.netlify.app"
 ];
-
 app.use(
   cors({
     origin: (origin, callback) => {
