@@ -37,7 +37,7 @@ const allowedOrigins = [
   "https://car-project-server-side.vercel.app",
   "https://car-rental-platform.vercel.app",
   "https://car-rental-plantform.vercel.app",
-  "https://car-rentals-plantform.netlify.app"
+  "https://car-rentals-plantform.netlify.app" 
 ];
 app.use(
   cors({
